@@ -1,0 +1,151 @@
+---
+#title: "Skilaverkefni 1"
+#author: "Orri Leví Úlfarsson - olu2@hi.is"
+#date: "January 19, 2018"
+#output: html_document
+---
+
+
+#HLUTI 1A
+
+####set inn pakkana sem eg ætla að nota
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+
+
+####setja rétt directory
+```{r}
+
+setwd("/Users/orril/OneDrive/Skóli/Líkindareikningur og Tölfræði/R")
+```
+
+####lesa inn skjalið husnaedi.txt
+```{r}
+OLU <- read.table("husnaedi_stort.txt", header=TRUE,sep= ",")
+```
+
+
+#HLUTI 1B
+
+####sjá öll matssvaedi sem eru í boði
+```{r}
+table(OLU$matssvaedi)
+```
+####Valdi matssvaedi:
+####90  - Holt/Tun
+####100 - Laugarneshverfi/Vogar
+####281 - Rettarholt
+```{r}
+hverfi<-c(150,160,161,170)
+```
+####velja bara þau akvednu hverfi
+```{r}
+OLU <-filter(OLU, matssvaedi %in% hverfi)
+```
+####Skoda nuna hvernig matsvaedi litur ut
+```{r}
+table(OLU$matssvaedi)
+```
+
+####i hverfi 150 er n=528
+####i hverfi 160 er n=678
+####i hverfi 161 er n=350
+####i hverfi 170 er n=393
+####N = 1949
+
+
+#HLUTI 1C
+
+####forskoðun á gögnum:
+```{r}
+str(OLU)
+```
+
+####breytum tölunum í rétt hverfi:
+```{r}
+OLU$matssvaedi <-as.factor(OLU$matssvaedi)
+levels(OLU$matssvaedi)
+levels(OLU$matssvaedi)<-c("Seljahverfi", "Hólar, Berg", "Fell", "Neðra-Breiðholt")
+str(OLU)
+```
+####lögum Íbúðareign og Einbýlishús
+```{r}
+OLU$teg_eign <-as.factor(OLU$teg_eign)
+levels(OLU$teg_eign)
+levels(OLU$teg_eign)<-c("Ósamþykktar","Íbúðareign","Íbúðarhús", "Einbýlishús","Fjölbýlishús","Gistihús","Gistiheimili","herbergi", "Parhús", "Raðhús","Séreign")
+str(OLU)
+```
+####lögum núvirði "ï..nuvirdi"
+```{r}
+names(OLU)[1]<-"kdagur"
+```
+#HLUTI 2A
+```{r}
+Mynd1<- ggplot(OLU,aes(x=matssvaedi, fill=matssvaedi)) +
+                  geom_bar() +
+                  facet_grid(~fjherb) +
+                  xlab('Hverfi') +
+                  ylab('Fjöldi íbúða')
+```
+####Teiknum myndina
+```{r, fig.width=10, fig.height=5}
+Mynd1
+```
+
+#HLUTI 2B
+```{r}
+einbyli<-filter(OLU, teg_eign == "Einbýlishús")
+
+Mynd2<- ggplot(einbyli, aes(matssvaedi,ibm2))
+```
+####Teiknum myndina
+```{r, fig.width=10, fig.height=5}
+Mynd2 + geom_boxplot(fill="yellow", colour="#8d24c1", outlier.colour = "red", outlier.shape = 1) +
+xlab('Hverfi') + 
+ylab('Flatarmál Einbýlishúsa')
+```
+
+#HLUTI 2C
+```{r}
+ibudareign<-filter(OLU, teg_eign == "Íbúðareign")
+
+Mynd3<-ggplot(OLU, aes(x=fjherb, y=ibm2)) +
+              geom_point() + 
+              xlab('Fjöldi herbergja') +
+              ylab('Stærð eignar') +
+              facet_grid(~matssvaedi)
+```
+####Teiknum myndina
+```{r, fig.width=20, fig.height=10}
+Mynd3
+```
+
+#HLUTI 3A
+```{r}
+table(OLU$matssvaedi, OLU$teg_eign)
+
+round(prop.table(table(OLU$matssvaedi,OLU$teg_eign),1),2)
+```
+
+#HLUTI 3B
+```{r}
+group_by(OLU, matssvaedi, teg_eign) %>%
+  summarise(medaltal=mean(ibm2, na.rm=T), stadalfravik=sd(ibm2, na.rm=T))
+
+group_by(OLU, matssvaedi, teg_eign) %>%
+  summarise(midgildi=median(ibm2, na.rm=T))
+```
+
+
+#HLUTI 3C
+```{r}
+litlar<-filter(ibudareign, ibm2>=50 & ibm2<=60)
+
+group_by(litlar, matssvaedi) %>%
+  summarise(medaltal=mean(nuvirdi, na.rm=T), stadalfravik=sd(nuvirdi, na.rm=T))
+
+table(litlar$matssvaedi, litlar$teg_eign)
+```
